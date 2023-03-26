@@ -12,7 +12,7 @@ class RemoteDaoImpl(config: Config): RemoteDao {
     val jedis = JedisPooled(config.REDIS_HOST, config.REDIS_PORT)
 
     override fun getAddress(id: UUID): Pair<String, Int> {
-        val raw = jedis.get("b4a1cff7-63a1-43c2-b5a0-9a3f05451df5")
+        val raw = jedis.get(id.toString())
         val (host, port) = raw.split(":")
         return host to port.toInt()
     }
