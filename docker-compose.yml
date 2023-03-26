@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+    lis-polarny:
+        build:
+            context: .
+        depends_on:
+            - redis
+        ports: 
+            - 8001:8001
+        environment:
+            - REDIS_HOST=redis
+            - REDIS_PORT=6379
+              
+    redis:
+        image: redis
+        ports:
+            - 6379:6379
+
+    extra_hosts:
+        host.docker.internal: 127.0.0.1
