@@ -1,5 +1,6 @@
 package com.lotholl.polarnylis
 
+import com.lotholl.polarnylis.remote.RemoteDao
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
@@ -9,16 +10,21 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.slf4j.LoggerFactory
+import java.util.*
 
-class SocketProxy(private val reqSession: DefaultWebSocketServerSession) {
+class SocketProxy(private val remoteDao: RemoteDao, private val reqSession: DefaultWebSocketServerSession) {
+
     val LOGGER = LoggerFactory.getLogger(javaClass)
     private val client = HttpClient(CIO) {
         install(io.ktor.client.plugins.websocket.WebSockets)
     }
 
+
     fun start(uri: String) {
+        val (host, port) = loadTargetAddress(uri)
+
         runBlocking {
-            client.webSocket(method = HttpMethod.Get, host = "127.0.0.1", port = 8080, path = uri) {
+            client.webSocket(method = HttpMethod.Get, host = host, port = port, path = REMOTE_URI) {
                 val remote = launch { remoteToClient(reqSession, this@webSocket) }
                 val requesting = launch { clientToRemote(reqSession, this@webSocket) }
 
@@ -59,6 +65,13 @@ class SocketProxy(private val reqSession: DefaultWebSocketServerSession) {
         } catch (e: Throwable) {
             LOGGER.debug("Error forwarding client to remote: $e")
         }
+    }
+
+    private fun loadTargetAddress(uuidString: String): Pair<String, Int> =
+        remoteDao.getAddress(UUID.fromString(uuidString))
+
+    companion object {
+        const val REMOTE_URI = "/ws?password=neko"
     }
 
 }

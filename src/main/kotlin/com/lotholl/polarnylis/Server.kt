@@ -1,5 +1,7 @@
 package com.lotholl.polarnylis
 
+import com.lotholl.polarnylis.remote.RemoteDao
+import com.lotholl.polarnylis.remote.RemoteDaoImpl
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
@@ -11,6 +13,9 @@ import org.slf4j.LoggerFactory
 
 fun main() {
     val LOGGER = LoggerFactory.getLogger("MAIN")
+    val config = Config.load()
+    val remoteDao: RemoteDao = RemoteDaoImpl(config)
+
     embeddedServer(Netty, port = 8001) {
         install(WebSockets) {
 
@@ -18,8 +23,8 @@ fun main() {
         routing {
             webSocket("/*") {
                 LOGGER.debug("New connection")
-                val uri = call.request.uri
-                SocketProxy(this@webSocket).start(uri)
+                val uri = call.request.uri.removePrefix("/")
+                SocketProxy(remoteDao, this@webSocket).start(uri)
                 closeExceptionally(IllegalStateException())
                 throw IllegalStateException()
             }
